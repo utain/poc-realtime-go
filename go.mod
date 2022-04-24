@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/apache/pulsar-client-go v0.8.1
+	github.com/caarlos0/env/v6 v6.9.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/gofiber/fiber/v2 v2.32.0
 	github.com/gofiber/websocket/v2 v2.0.21
@@ -41,6 +42,7 @@ require (
 	github.com/jcmturner/gofork v1.0.0 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.2 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
+	github.com/joho/godotenv v1.4.0
 	github.com/klauspost/compress v1.15.1 // indirect
 	github.com/linkedin/goavro/v2 v2.11.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect

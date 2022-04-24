@@ -11,17 +11,15 @@ import (
 )
 
 type WithRedis struct {
-	db  *redis.Client
+	db  redis.UniversalClient
 	wsm *ws.WsManager
 }
 
-func Open(wsm *ws.WsManager) pubsub.Pubsub {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+func Open(opt pubsub.DefaultOptions) pubsub.Pubsub {
+	rdb := redis.NewUniversalClient(&redis.UniversalOptions{
+		Addrs: opt.Addrs,
 	})
-	return &WithRedis{rdb, wsm}
+	return &WithRedis{rdb, opt.WsManager}
 }
 
 func (w *WithRedis) Close() error {

@@ -12,33 +12,28 @@ import (
 )
 
 type WithKafka struct {
-	producer sarama.AsyncProducer
+	producer sarama.SyncProducer
 	consumer sarama.ConsumerGroup
 	wsm      *ws.WsManager
 }
 
-func Open(wsm *ws.WsManager) pubsub.Pubsub {
-	// reader := kafka.NewReader(kafka.ReaderConfig{
-	// 	Brokers: []string{"localhost:9092"},
-	// 	Topic:   topic,
-	// })
-	// writer := kafka.Writer{
-	// 	Addr: ,
-	// 	Brokers: []string{"localhost:9092"},
-	// }
+func Open(opts pubsub.DefaultOptions) pubsub.Pubsub {
 	config := sarama.NewConfig()
-	producer, err := sarama.NewAsyncProducer([]string{"localhost:9092"}, config)
+	config.Producer.Partitioner = sarama.NewRoundRobinPartitioner
+	config.Producer.Return.Successes = true
+	fmt.Println("opts.Addrs:", opts.Addrs)
+	producer, err := sarama.NewSyncProducer(opts.Addrs, config)
 	if err != nil {
-		log.Fatalln("NewAsyncProducer:", err)
+		log.Fatalln("SyncProducer:", err)
 	}
-	consumer, err := sarama.NewConsumerGroup([]string{"localhost:9092"}, uuid.NewString(), config)
+	consumer, err := sarama.NewConsumerGroup(opts.Addrs, uuid.NewString(), config)
 	if err != nil {
 		log.Fatalln("NewConsumer:", err)
 	}
 	return &WithKafka{
 		producer: producer,
 		consumer: consumer,
-		wsm:      wsm,
+		wsm:      opts.WsManager,
 	}
 }
 
@@ -52,16 +47,20 @@ func (w *WithKafka) Subscriber(ctx context.Context, topic string) error {
 	handler := NewHandler(w.wsm)
 	for {
 		w.consumer.Consume(ctx, []string{topic}, handler)
-		fmt.Println("Hello")
 	}
 }
 func (w *WithKafka) WriteMessage(ctx context.Context, topic string, chanId string, payload []byte) error {
-	w.producer.Input() <- &sarama.ProducerMessage{
+	log.Println("Send to broker:", topic)
+	partition, offset, err := w.producer.SendMessage(&sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(chanId),
 		Value: sarama.StringEncoder(payload),
+	})
+	if err != nil {
+		log.Fatalln("Can't send message to the broker", err)
 	}
-	return nil
+	log.Printf("Sent at partition: %d and offset: %d\r\n", partition, offset)
+	return err
 }
 
 // consumer handler

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
@@ -17,16 +18,16 @@ type WithPulsar struct {
 	wsm    *ws.WsManager
 }
 
-func Open(wsm *ws.WsManager) pubsub.Pubsub {
+func Open(opts pubsub.DefaultOptions) pubsub.Pubsub {
 	client, err := pulsar.NewClient(pulsar.ClientOptions{
-		URL:               "pulsar://localhost:6650",
+		URL:               strings.Join(opts.Addrs, ","),
 		OperationTimeout:  30 * time.Second,
 		ConnectionTimeout: 30 * time.Second,
 	})
 	if err != nil {
 		log.Fatalf("Could not instantiate Pulsar client: %v", err)
 	}
-	return &WithPulsar{client, wsm}
+	return &WithPulsar{client, opts.WsManager}
 }
 
 func (w *WithPulsar) Close() (err error) {
@@ -52,18 +53,18 @@ func (w *WithPulsar) Subscriber(ctx context.Context, topic string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			fmt.Println("SubscriberDone")
+			fmt.Println("Context:Done")
 			return nil
 		case msg := <-consumer.Chan():
-			fmt.Println("SubscriberDone:", msg)
+			fmt.Println("Consume:", msg)
 			json, err := ws.ParseMessage(msg.Payload())
 			if err != nil {
 				continue
 			}
 			defer consumer.AckID(msg.ID())
 			w.wsm.Boardcast <- json
-		case <-time.After(time.Minute * 30):
-			fmt.Println("SubscriberDone:Loop")
+			// case <-time.After(time.Minute * 30):
+			// 	fmt.Println("Timer")
 		}
 	}
 }

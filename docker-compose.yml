@@ -15,9 +15,9 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     networks:
       - realtime-go
-  broker:
+  kafka:
     image: confluentinc/cp-kafka:7.0.1
-    container_name: broker
+    container_name: kafka
     ports:
       - "9092:9092"
     depends_on:
@@ -26,7 +26,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -38,6 +38,57 @@ services:
       - 6650:6650
       - 8080:8080
     command: bin/pulsar standalone
+    networks:
+      - realtime-go
+  realtime:
+    build: .
+    image: poc-realtime-go:latest
+    depends_on:
+      - pulsar
+      - kafka
+      - redis
+    ports:
+      - 6000:6000
+    environment:
+      - TOPIC
+      - KAFKA_ADDRS
+      - PULSAR_ADDRS
+      - REDIS_ADDRS
+    command: realtime -p=6000 -t=1
+    networks:
+      - realtime-go
+  realtime2:
+    build: .
+    image: poc-realtime-go:latest
+    depends_on:
+      - pulsar
+      - kafka
+      - redis
+    environment:
+      - TOPIC
+      - KAFKA_ADDRS
+      - PULSAR_ADDRS
+      - REDIS_ADDRS
+    ports:
+      - 6001:6000
+    command: realtime -p=6000 -t=1
+    networks:
+      - realtime-go
+  realtime3:
+    build: .
+    image: poc-realtime-go:latest
+    environment:
+      - TOPIC
+      - KAFKA_ADDRS
+      - PULSAR_ADDRS
+      - REDIS_ADDRS
+    depends_on:
+      - pulsar
+      - kafka
+      - redis
+    ports:
+      - 6002:6000
+    command: realtime -p=6000 -t=1
     networks:
       - realtime-go
 networks:
