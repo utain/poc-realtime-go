@@ -9,10 +9,11 @@ import (
 )
 
 type Config struct {
-	Topic       string   `env:"TOPIC" envDefault:"realtime.go"`
-	KafkaAddrs  []string `env:"KAFKA_ADDRS" envSeparator:","`
-	PulsarAddrs []string `env:"PULSAR_ADDRS" envSeparator:","`
-	RedisAddrs  []string `env:"REDIS_ADDRS" envSeparator:","`
+	Topic         string   `env:"TOPIC" envDefault:"realtime.go"`
+	InternalAddrs []string `env:"INTERNAL_ADDRS" envSeparator:","`
+	KafkaAddrs    []string `env:"KAFKA_ADDRS" envSeparator:","`
+	PulsarAddrs   []string `env:"PULSAR_ADDRS" envSeparator:","`
+	RedisAddrs    []string `env:"REDIS_ADDRS" envSeparator:","`
 }
 
 var config Config

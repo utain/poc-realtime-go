@@ -6,15 +6,17 @@ services:
     ports:
       - 6379:6379
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.10
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
     container_name: zookeeper
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      - ZOOKEEPER_CLIENT_PORT
+      - ZOOKEEPER_TICK_TIME
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.20
   kafka:
     image: confluentinc/cp-kafka:7.0.1
     container_name: kafka
@@ -23,15 +25,16 @@ services:
     depends_on:
       - zookeeper
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      - KAFKA_BROKER_ID
+      - KAFKA_ZOOKEEPER_CONNECT
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+      - KAFKA_ADVERTISED_LISTENERS
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.30
   pulsar:
     image: apachepulsar/pulsar:2.9.1
     ports:
@@ -39,7 +42,8 @@ services:
       - 8080:8080
     command: bin/pulsar standalone
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.40
   realtime:
     build: .
     image: poc-realtime-go:latest
@@ -49,14 +53,17 @@ services:
       - redis
     ports:
       - 6000:6000
+      - 16000:16000
     environment:
       - TOPIC
       - KAFKA_ADDRS
       - PULSAR_ADDRS
       - REDIS_ADDRS
-    command: realtime -p=6000 -t=1
+      - INTERNAL_ADDRS
+    command: realtime -p=6000 -b=16000 -t=1
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.50
   realtime2:
     build: .
     image: poc-realtime-go:latest
@@ -69,11 +76,14 @@ services:
       - KAFKA_ADDRS
       - PULSAR_ADDRS
       - REDIS_ADDRS
+      - INTERNAL_ADDRS
     ports:
       - 6001:6000
-    command: realtime -p=6000 -t=1
+      - 16001:16000
+    command: realtime -p=6000 -b=16000 -t=1
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.51
   realtime3:
     build: .
     image: poc-realtime-go:latest
@@ -82,14 +92,22 @@ services:
       - KAFKA_ADDRS
       - PULSAR_ADDRS
       - REDIS_ADDRS
+      - INTERNAL_ADDRS
     depends_on:
       - pulsar
       - kafka
       - redis
     ports:
       - 6002:6000
-    command: realtime -p=6000 -t=1
+      - 16002:16000
+    command: realtime -p=6000 -b=16000 -t=1
     networks:
-      - realtime-go
+      realtime-go:
+        ipv4_address: 10.10.1.52
 networks:
   realtime-go:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.1.0/24
+          gateway: 10.10.1.1

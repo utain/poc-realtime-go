@@ -8,6 +8,7 @@ import (
 	"github.com/utain/poc/go-realtime/config"
 	"github.com/utain/poc/go-realtime/pubsub"
 	"github.com/utain/poc/go-realtime/server"
+	"github.com/utain/poc/go-realtime/withgo"
 	"github.com/utain/poc/go-realtime/withkafka"
 	"github.com/utain/poc/go-realtime/withpulsar"
 	"github.com/utain/poc/go-realtime/withredis"
@@ -20,9 +21,11 @@ func init() {
 
 func main() {
 	var port uint
+	var internalPort uint
 	var bus uint
 	flag.UintVar(&port, "p", 6000, "Server port default 6000")
-	flag.UintVar(&bus, "t", 0, "Pub/sub types 0 (redis), 1 (kafka), 2 (pulsar)")
+	flag.UintVar(&internalPort, "b", 16000, "Server port default 16000")
+	flag.UintVar(&bus, "t", 0, "Pub/sub types 0 (redis), 1 (kafka), 2 (pulsar), 3 (internal)")
 	flag.Parse()
 
 	manager := ws.WsManager{
@@ -52,6 +55,15 @@ func main() {
 		ibus = withpulsar.Open(pubsub.DefaultOptions{
 			WsManager: &manager,
 			Addrs:     conf.PulsarAddrs,
+		})
+	case 3:
+		log.Println("Using puregolang")
+		ibus = withgo.Open(withgo.Options{
+			DefaultOptions: pubsub.DefaultOptions{
+				WsManager: &manager,
+				Addrs:     conf.InternalAddrs,
+			},
+			InternalPort: internalPort,
 		})
 	}
 
